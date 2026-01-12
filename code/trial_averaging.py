@@ -10,7 +10,7 @@ def wobbly_curve(x, shift=10):
     """
     # Gaussian peaks
     peak1 = np.exp(-((x - 3) ** 2) / 0.3) * 1.3
-    peak2 = np.exp(-((x - 5) ** 2) / 0.4) * 2.0
+    peak2 = np.exp(-((x - 6) ** 2) / 0.4) * 2.0
     
     # Natural wobble (noise)
     np.random.seed(42)  # For reproducibility
@@ -25,8 +25,8 @@ def wobbly_curve2(x, shift=7):
     Wobbles around baseline with different pattern
     """
     # Gaussian peaks
-    peak1 = np.exp(-((x - 5) ** 2) / 0.35) * 1.7
-    peak2 = np.exp(-((x - 9) ** 2) / 0.45) * 1.1
+    peak1 = np.exp(-((x - 6) ** 2) / 0.35) * 1.7
+    peak2 = np.exp(-((x - 8) ** 2) / 0.45) * 1.1
     
     # Different natural wobble pattern
     np.random.seed(123)  # Different seed for different pattern
@@ -44,8 +44,8 @@ def wobbly_curve3(x, shift=4):
     """
     # Gaussian peaks
     peak1 = np.exp(-((x - 1) ** 2) / 0.4) * 1.1
-    peak2 = np.exp(-((x - 5) ** 2) / 0.3) * 1.9
-    peak3 = np.exp(-((x - 7) ** 2) / 0.35) * 0.8
+    peak2 = np.exp(-((x - 6) ** 2) / 0.3) * 1.9
+    peak3 = np.exp(-((x - 10) ** 2) / 0.35) * 0.8
     
     # Different natural wobble pattern
     np.random.seed(456)  # Different seed for different pattern
@@ -103,7 +103,7 @@ class TrialAveraging(MovingCameraScene):
         curve = VMobject(stroke_color=WHITE, stroke_width=4)
         curve.set_points_as_corners(curve_points)
         
-        self.add(curve)
+        self.play(Create(curve), run_time=1)
         
         # --- DRAW SECOND CURVE ---
         # Sample the second wobbly curve function
@@ -116,7 +116,7 @@ class TrialAveraging(MovingCameraScene):
         curve2 = VMobject(stroke_color=WHITE, stroke_width=4)
         curve2.set_points_as_corners(curve_points2)
         
-        self.add(curve2)
+        self.play(Create(curve2), run_time=1)
         
         # --- DRAW THIRD CURVE ---
         # Sample the third wobbly curve function
@@ -129,13 +129,9 @@ class TrialAveraging(MovingCameraScene):
         curve3 = VMobject(stroke_color=WHITE, stroke_width=4)
         curve3.set_points_as_corners(curve_points3)
         
-        self.add(curve3)
+        self.play(Create(curve3), run_time=1)
         
-        # First 2 seconds: all three shifted curves are visible and static
-        self.wait(1)
-        
-        # Second 2 seconds: all three curves slide down to shift=0
-        # Each curve moves different distances but all take 2 seconds
+        # Shift down animation
         self.play(
             curve.animate.shift(DOWN * 10),
             curve2.animate.shift(DOWN * 7),
@@ -143,8 +139,6 @@ class TrialAveraging(MovingCameraScene):
             run_time=2
         )
         
-        # Third 2 seconds: keep all three curves static at shift=0, then fade them
-        self.wait(1)
         
         # Fade the three curves to be less intense
         self.play(
