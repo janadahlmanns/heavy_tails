@@ -45,7 +45,7 @@ def wobbly_curve3(x, shift=4):
     # Gaussian peaks
     peak1 = np.exp(-((x - 1) ** 2) / 0.4) * 1.1
     peak2 = np.exp(-((x - 6) ** 2) / 0.3) * 1.9
-    peak3 = np.exp(-((x - 10) ** 2) / 0.35) * 0.8
+    peak3 = np.exp(-((x - 9) ** 2) / 0.35) * 0.8
     
     # Different natural wobble pattern
     np.random.seed(456)  # Different seed for different pattern
@@ -69,7 +69,7 @@ class TrialAveraging(MovingCameraScene):
             lines.append(line)
             
             # Create label at middle of line, slightly above
-            label = Text(f"y={y}", font_size=24, color=WHITE)
+            label = Text(f"y={y}", font_size=24, color=WHITE, font="sans-serif")
             label.move_to([5, y + 0.4, 0])
             labels.append(label)
         
@@ -81,7 +81,7 @@ class TrialAveraging(MovingCameraScene):
             lines.append(line)
             
             # Create label at 1/3 the length, slightly to the right
-            label = Text(f"x={x}", font_size=24, color=WHITE)
+            label = Text(f"x={x}", font_size=24, color=WHITE, font="sans-serif")
             label.move_to([x + 0.4, 10/3, 0])
             labels.append(label)
         
@@ -91,9 +91,14 @@ class TrialAveraging(MovingCameraScene):
         for label in labels:
             self.add(label)
         
+        # --- ADD TEXT LABELS ---
+        trial_1_text = Text("trial 1", font_size=36, color=WHITE, font="sans-serif")
+        trial_1_text.move_to([11, 11, 0])
+        self.add(trial_1_text)
+        
         # --- DRAW CURVE ---
         # Sample the wobbly curve function
-        x_samples = np.linspace(0, 12, 300)
+        x_samples = np.linspace(0, 10, 300)
         y_samples = np.array([wobbly_curve(x) for x in x_samples])
         
         # Create curve points
@@ -103,9 +108,14 @@ class TrialAveraging(MovingCameraScene):
         curve = VMobject(stroke_color=WHITE, stroke_width=4)
         curve.set_points_as_corners(curve_points)
         
-        self.play(Create(curve), run_time=1)
+        self.play(Create(curve), run_time=2)
         
         # --- DRAW SECOND CURVE ---
+        # Add trial 2 text before drawing curve2
+        trial_2_text = Text("trial 2", font_size=36, color=WHITE, font="sans-serif")
+        trial_2_text.move_to([11, 8, 0])
+        self.add(trial_2_text)
+        
         # Sample the second wobbly curve function
         y_samples2 = np.array([wobbly_curve2(x) for x in x_samples])
         
@@ -116,9 +126,14 @@ class TrialAveraging(MovingCameraScene):
         curve2 = VMobject(stroke_color=WHITE, stroke_width=4)
         curve2.set_points_as_corners(curve_points2)
         
-        self.play(Create(curve2), run_time=1)
+        self.play(Create(curve2), run_time=2)
         
         # --- DRAW THIRD CURVE ---
+        # Add trial 3 text before drawing curve3
+        trial_3_text = Text("trial 3", font_size=36, color=WHITE, font="sans-serif")
+        trial_3_text.move_to([11, 5, 0])
+        self.add(trial_3_text)
+        
         # Sample the third wobbly curve function
         y_samples3 = np.array([wobbly_curve3(x) for x in x_samples])
         
@@ -129,23 +144,17 @@ class TrialAveraging(MovingCameraScene):
         curve3 = VMobject(stroke_color=WHITE, stroke_width=4)
         curve3.set_points_as_corners(curve_points3)
         
-        self.play(Create(curve3), run_time=1)
+        self.play(Create(curve3), run_time=2)
         
-        # Shift down animation
+        # Shift down animation with fading
         self.play(
-            curve.animate.shift(DOWN * 10),
-            curve2.animate.shift(DOWN * 7),
-            curve3.animate.shift(DOWN * 4),
+            curve.animate.shift(DOWN * 10).set_stroke(opacity=0.3),
+            curve2.animate.shift(DOWN * 7).set_stroke(opacity=0.3),
+            curve3.animate.shift(DOWN * 4).set_stroke(opacity=0.3),
+            trial_1_text.animate.shift(DOWN * 10).set_opacity(0),
+            trial_2_text.animate.shift(DOWN * 7).set_opacity(0),
+            trial_3_text.animate.shift(DOWN * 4).set_opacity(0),
             run_time=2
-        )
-        
-        
-        # Fade the three curves to be less intense
-        self.play(
-            curve.animate.set_stroke(opacity=0.3),
-            curve2.animate.set_stroke(opacity=0.3),
-            curve3.animate.set_stroke(opacity=0.3),
-            run_time=1
         )
         
         # --- DRAW AVERAGE CURVE ---
@@ -163,5 +172,11 @@ class TrialAveraging(MovingCameraScene):
         curve_avg = VMobject(stroke_color=RED, stroke_width=10)
         curve_avg.set_points_as_corners(curve_points_avg)
         
-        self.play(Create(curve_avg))
-        self.wait(2)
+        self.play(Create(curve_avg), run_time=2)
+        
+        # Add average label
+        avg_text = Text("average", font_size=36, color=RED, font="sans-serif")
+        avg_text.move_to([11, 1, 0])
+        self.add(avg_text)
+        
+        self.wait(3)
