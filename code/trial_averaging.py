@@ -9,7 +9,7 @@ def wobbly_curve(x, shift=10):
     Wobbles around baseline with ±0.2 amplitude
     """
     # Gaussian peaks
-    peak1 = np.exp(-((x - 2) ** 2) / 0.3) * 1.5
+    peak1 = np.exp(-((x - 3) ** 2) / 0.3) * 1.3
     peak2 = np.exp(-((x - 5) ** 2) / 0.4) * 2.0
     
     # Natural wobble (noise)
@@ -26,7 +26,7 @@ def wobbly_curve2(x, shift=7):
     """
     # Gaussian peaks
     peak1 = np.exp(-((x - 5) ** 2) / 0.35) * 1.7
-    peak2 = np.exp(-((x - 9) ** 2) / 0.45) * 1.4
+    peak2 = np.exp(-((x - 9) ** 2) / 0.45) * 1.1
     
     # Different natural wobble pattern
     np.random.seed(123)  # Different seed for different pattern
@@ -43,9 +43,9 @@ def wobbly_curve3(x, shift=4):
     Wobbles around baseline with yet another pattern
     """
     # Gaussian peaks
-    peak1 = np.exp(-((x - 1) ** 2) / 0.4) * 1.3
+    peak1 = np.exp(-((x - 1) ** 2) / 0.4) * 1.1
     peak2 = np.exp(-((x - 5) ** 2) / 0.3) * 1.9
-    peak3 = np.exp(-((x - 7) ** 2) / 0.35) * 1.2
+    peak3 = np.exp(-((x - 7) ** 2) / 0.35) * 0.8
     
     # Different natural wobble pattern
     np.random.seed(456)  # Different seed for different pattern
@@ -132,7 +132,7 @@ class TrialAveraging(MovingCameraScene):
         self.add(curve3)
         
         # First 2 seconds: all three shifted curves are visible and static
-        self.wait(2)
+        self.wait(1)
         
         # Second 2 seconds: all three curves slide down to shift=0
         # Each curve moves different distances but all take 2 seconds
@@ -143,22 +143,31 @@ class TrialAveraging(MovingCameraScene):
             run_time=2
         )
         
-        # Third 2 seconds: keep all three curves static at shift=0
+        # Third 2 seconds: keep all three curves static at shift=0, then fade them
+        self.wait(1)
+        
+        # Fade the three curves to be less intense
+        self.play(
+            curve.animate.set_stroke(opacity=0.3),
+            curve2.animate.set_stroke(opacity=0.3),
+            curve3.animate.set_stroke(opacity=0.3),
+            run_time=1
+        )
+        
+        # --- DRAW AVERAGE CURVE ---
+        # Calculate the average of the three unshifted curves
+        y_samples_avg = (
+            np.array([wobbly_curve(x, shift=0) for x in x_samples]) +
+            np.array([wobbly_curve2(x, shift=0) for x in x_samples]) +
+            np.array([wobbly_curve3(x, shift=0) for x in x_samples])
+        ) / 3
+        
+        # Create average curve points
+        curve_points_avg = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples_avg)])
+        
+        # Create and display the average curve in red
+        curve_avg = VMobject(stroke_color=RED, stroke_width=10)
+        curve_avg.set_points_as_corners(curve_points_avg)
+        
+        self.play(Create(curve_avg))
         self.wait(2)
-        
-        # --- DRAW UNSHIFTED VERSIONS OF THE THREE CURVES ---
-        # Unshifted curve 1 (wobbles around y=0) - REMOVED
-        
-        # Unshifted curve 2 (wobbles around y=0)
-        y_samples_unshifted2 = np.array([wobbly_curve2(x, shift=0) for x in x_samples])
-        curve_points_unshifted2 = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples_unshifted2)])
-        curve_unshifted2 = VMobject(stroke_color=WHITE, stroke_width=4)
-        curve_unshifted2.set_points_as_corners(curve_points_unshifted2)
-        self.add(curve_unshifted2)
-        
-        # Unshifted curve 3 (wobbles around y=0)
-        y_samples_unshifted3 = np.array([wobbly_curve3(x, shift=0) for x in x_samples])
-        curve_points_unshifted3 = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples_unshifted3)])
-        curve_unshifted3 = VMobject(stroke_color=WHITE, stroke_width=4)
-        curve_unshifted3.set_points_as_corners(curve_points_unshifted3)
-        self.add(curve_unshifted3)
