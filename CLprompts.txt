@@ -1,8 +1,6 @@
-ffmpeg -i LVAnimation.mp4 -vf "fps=25,scale=540:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 lvanimation.gif
-smaller files:
-ffmpeg -i media/videos/lorenz/600p50/Lorenz.mp4 -vf "fps=30,scale=600:-1:flags=lanczos" -loop 0 lorenz_600.gif
+ffmpeg -i "media/videos/trial_averaging/600p15/TrialAveraging.mp4" -vf "fps=15,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 trial_averaging_600p.gif
 
-
+ & "C:\ProgramData\chocolatey\bin\gifsicle.exe" -O3 trial_averaging_600p.gif -o trial_averaging_optimized.gif  
 
  manim -pql -r 1080,1080 --fps 50 lotka_volterra/lvanimation.py LVAnimation
 

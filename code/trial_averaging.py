@@ -59,41 +59,12 @@ class TrialAveraging(MovingCameraScene):
         self.camera.frame.move_to([6, 6, 0])
         self.camera.background_color = "#1a1a1a"
         
-        # Create horizontal white lines at various y values with width 2
-        y_values = [0, 2, 4, 6, 8, 10, 12]
-        lines = []
-        labels = []
-        
-        for y in y_values:
-            line = Line(start=np.array([0, y, 0]), end=np.array([12, y, 0]), stroke_color="#666666", stroke_width=2)
-            lines.append(line)
-            
-            # Create label at middle of line, slightly above
-            label = Text(f"y={y}", font_size=24, color=WHITE, font="sans-serif")
-            label.move_to([5, y + 0.4, 0])
-            labels.append(label)
-        
-        # Create vertical white lines at various x values with width 2
-        x_values = [0, 2, 4, 6, 8, 10, 12]
-        
-        for x in x_values:
-            line = Line(start=np.array([x, 0, 0]), end=np.array([x, 12, 0]), stroke_color="#666666", stroke_width=2)
-            lines.append(line)
-            
-            # Create label at 1/3 the length, slightly to the right
-            label = Text(f"x={x}", font_size=24, color=WHITE, font="sans-serif")
-            label.move_to([x + 0.4, 10/3, 0])
-            labels.append(label)
-        
-        # Display all lines and labels
-        for line in lines:
-            self.add(line)
-        for label in labels:
-            self.add(label)
+        # Initial wait
+        self.wait(0.5)
         
         # --- ADD TEXT LABELS ---
-        trial_1_text = Text("trial 1", font_size=36, color=WHITE, font="sans-serif")
-        trial_1_text.move_to([11, 11, 0])
+        trial_1_text = Text("trial 1", font_size=48, color="#AFCBCF", font="sans-serif")
+        trial_1_text.move_to([11.25, 10, 0])
         self.add(trial_1_text)
         
         # --- DRAW CURVE ---
@@ -105,15 +76,15 @@ class TrialAveraging(MovingCameraScene):
         curve_points = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples)])
         
         # Create and display the curve
-        curve = VMobject(stroke_color=WHITE, stroke_width=4)
+        curve = VMobject(stroke_color="#AFCBCF", stroke_width=4)
         curve.set_points_as_corners(curve_points)
         
         self.play(Create(curve), run_time=2)
         
         # --- DRAW SECOND CURVE ---
         # Add trial 2 text before drawing curve2
-        trial_2_text = Text("trial 2", font_size=36, color=WHITE, font="sans-serif")
-        trial_2_text.move_to([11, 8, 0])
+        trial_2_text = Text("trial 2", font_size=48, color="#AFCBCF", font="sans-serif")
+        trial_2_text.move_to([11.25, 7, 0])
         self.add(trial_2_text)
         
         # Sample the second wobbly curve function
@@ -123,15 +94,15 @@ class TrialAveraging(MovingCameraScene):
         curve_points2 = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples2)])
         
         # Create and display the second curve
-        curve2 = VMobject(stroke_color=WHITE, stroke_width=4)
+        curve2 = VMobject(stroke_color="#AFCBCF", stroke_width=4)
         curve2.set_points_as_corners(curve_points2)
         
         self.play(Create(curve2), run_time=2)
         
         # --- DRAW THIRD CURVE ---
         # Add trial 3 text before drawing curve3
-        trial_3_text = Text("trial 3", font_size=36, color=WHITE, font="sans-serif")
-        trial_3_text.move_to([11, 5, 0])
+        trial_3_text = Text("trial 3", font_size=48, color="#AFCBCF", font="sans-serif")
+        trial_3_text.move_to([11.25, 4, 0])
         self.add(trial_3_text)
         
         # Sample the third wobbly curve function
@@ -141,7 +112,7 @@ class TrialAveraging(MovingCameraScene):
         curve_points3 = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples3)])
         
         # Create and display the third curve
-        curve3 = VMobject(stroke_color=WHITE, stroke_width=4)
+        curve3 = VMobject(stroke_color="#AFCBCF", stroke_width=4)
         curve3.set_points_as_corners(curve_points3)
         
         self.play(Create(curve3), run_time=2)
@@ -168,15 +139,15 @@ class TrialAveraging(MovingCameraScene):
         # Create average curve points
         curve_points_avg = np.array([[x, y, 0] for x, y in zip(x_samples, y_samples_avg)])
         
-        # Create and display the average curve in red
-        curve_avg = VMobject(stroke_color=RED, stroke_width=10)
+        # Create and display the average curve in contrast orange
+        curve_avg = VMobject(stroke_color="#E79E16", stroke_width=10)
         curve_avg.set_points_as_corners(curve_points_avg)
         
         self.play(Create(curve_avg), run_time=2)
         
         # Add average label
-        avg_text = Text("average", font_size=36, color=RED, font="sans-serif")
-        avg_text.move_to([11, 1, 0])
+        avg_text = Text("average", font_size=48, color="#E79E16", font="sans-serif")
+        avg_text.move_to([11.5, 0, 0])
         self.add(avg_text)
         
-        self.wait(3)
+        self.wait(2)
