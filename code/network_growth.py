@@ -7,6 +7,7 @@ class NetworkGrowth(MovingCameraScene):
         super().__init__(*args, **kwargs)
         self.network_data = []
         self.dots = []  # Keep track of all dots added
+        self.histogram_bars = {}  # {degree: bar_object}
     
     def load_network_data(self):
         """Load network data from CSV file"""
@@ -14,6 +15,70 @@ class NetworkGrowth(MovingCameraScene):
             reader = csv.DictReader(f)
             for row in reader:
                 self.network_data.append(row)
+    
+    def init_histogram(self):
+        """Initialize all 25 histogram bars with height 0"""
+        for degree in range(1, 26):  # Degrees 1-25
+            # Map degree (0-25) to right-side x-axis (10.25-15.25 in manim coords)
+            x_pos = 10.25 + (degree / 25.0) * 5.0
+            # Bar width of 1 unit on the right-side axis = 0.2 in manim coordinates
+            bar_width = (1.0 / 25.0) * 5.0  # = 0.2
+            bar_height = 0  # Start at height 0
+            y_pos = 0.5 + bar_height / 2
+            
+            bar = Rectangle(width=bar_width, height=bar_height, 
+                           fill_color=WHITE, fill_opacity=1, stroke_width=0)
+            bar.move_to([x_pos, y_pos, 0])
+            self.histogram_bars[degree] = bar
+            self.add(bar)
+    
+    def update_histogram(self, node_index):
+        """Update histogram based on degree data from current node"""
+        from collections import Counter
+        
+        node_data = self.network_data[node_index]
+        
+        # Get degree values for all added nodes (indices 0 to node_index)
+        degrees = []
+        for i in range(node_index + 1):
+            degree_key = f'degree_at_node_{i}'
+            if degree_key in node_data:
+                degree = int(float(node_data[degree_key]))
+                if degree > 0:  # Only count non-zero degrees
+                    degrees.append(degree)
+        
+        # Count frequency of each degree
+        degree_counts = Counter(degrees)
+        
+        # Create replacement transform animations for all bars
+        replacement_animations = []
+        bars_to_update = []
+        
+        for degree in range(1, 26):  # Degrees 1-25
+            count = degree_counts.get(degree, 0)
+            
+            # Map degree (0-25) to right-side x-axis (10.25-15.25 in manim coords)
+            x_pos = 10.25 + (degree / 25.0) * 5.0
+            # Bar width of 1 unit on the right-side axis = 0.2 in manim coordinates
+            bar_width = (1.0 / 25.0) * 5.0  # = 0.2
+            bar_height = count * (8.0 / 25.0)  # Scale count to height range
+            y_pos = 0.5 + bar_height / 2
+            
+            old_bar = self.histogram_bars[degree]
+            new_bar = Rectangle(width=bar_width, height=bar_height,
+                               fill_color=WHITE, fill_opacity=1, stroke_width=0)
+            new_bar.move_to([x_pos, y_pos, 0])
+            
+            replacement_animations.append(ReplacementTransform(old_bar, new_bar, run_time=15/15))
+            bars_to_update.append((degree, new_bar))
+        
+        # Play all bar updates simultaneously
+        if replacement_animations:
+            self.play(*replacement_animations)
+        
+        # Update dictionary with new bar objects
+        for degree, new_bar in bars_to_update:
+            self.histogram_bars[degree] = new_bar
     
     def add_node(self, node_index):
         """Create, add to scene, and return a dot for the given node index"""
@@ -84,6 +149,9 @@ class NetworkGrowth(MovingCameraScene):
             create_animations = [Create(conn, run_time=15/15) for conn in connections]
             self.play(*create_animations)
         
+        # Update histogram based on current degree distribution
+        self.update_histogram(node_index)
+        
         return dot
     
     def construct(self):
@@ -142,7 +210,6 @@ class NetworkGrowth(MovingCameraScene):
         # --- LOAD NETWORK DATA ---
         self.load_network_data()
         
-      
         # --- HISTOGRAM COORDINATE SYSTEM (Right Pane) ---
         # X-axis (width)
         hist_x_axis = Line(start=np.array([10.25, 0.5, 0]), end=np.array([15.25, 0.5, 0]), stroke_color=WHITE, stroke_width=2)
@@ -165,6 +232,13 @@ class NetworkGrowth(MovingCameraScene):
             label.move_to([9.55, pos, 0])
             hist_y_labels.append(label)
         
+        # Add unlabeled ticks at every integer count
+        hist_y_minor_ticks = []
+        for count in range(0, 26):
+            y_manim = 0.5 + (count / 25.0) * 8.0
+            tick = Line(start=np.array([10.25, y_manim, 0]), end=np.array([10.15, y_manim, 0]), stroke_color=WHITE, stroke_width=1)
+            hist_y_minor_ticks.append(tick)
+        
         # X-axis ticks and labels (for degree values 0-25)
         hist_x_positions = np.linspace(10.25, 15.25, 6)  # 6 ticks
         hist_x_values_labels = [0, 5, 10, 15, 20, 25]  # Degree values
@@ -180,10 +254,22 @@ class NetworkGrowth(MovingCameraScene):
             label.move_to([pos, 0.05, 0])
             hist_x_labels.append(label)
         
+        # Add unlabeled ticks at every integer degree
+        hist_x_minor_ticks = []
+        for degree in range(0, 26):
+            x_manim = 10.25 + (degree / 25.0) * 5.0
+            tick = Line(start=np.array([x_manim, 0.5, 0]), end=np.array([x_manim, 0.35, 0]), stroke_color=WHITE, stroke_width=1)
+            hist_x_minor_ticks.append(tick)
+        
         # Add histogram coordinate system
         self.add(hist_x_axis, hist_y_axis)
         self.add(*hist_y_ticks, *hist_y_labels)
+        self.add(*hist_y_minor_ticks)
         self.add(*hist_x_ticks, *hist_x_labels)
+        self.add(*hist_x_minor_ticks)
+        
+        # Initialize histogram bars with height 0
+        self.init_histogram()
 
         # --- PLOT NETWORK NODES ---
         #for node_index in range(60):
