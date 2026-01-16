@@ -108,68 +108,63 @@ plt.savefig('network_visualization.png', dpi=150, bbox_inches='tight')
 print(f"\nVisualization saved to network_visualization.png")
 plt.show()
 
-# Rebuild network incrementally to capture degree evolution
-degree_evolution = {}  # {node_id: [degrees at each step]}
+# Rebuild network incrementally and write CSV as we go
+# Each row captures the network state when that node was added
 
-# Start with initial nodes (nodes 0 to m_edges)
-growing_graph = nx.Graph()
-growing_graph.add_nodes_from(range(m_edges + 1))
-
-# Initialize degree evolution for first nodes
-for node in growing_graph.nodes():
-    degree_evolution[node] = [0]
-
-# Simulate BA network growth by adding nodes sequentially
-for new_node in range(m_edges + 1, n_nodes):
-    growing_graph.add_node(new_node)
-    
-    # Find which nodes this new node connects to (simulate BA attachment)
-    # We'll use the edges from the final BA graph that involve new_node
-    neighbors_of_new = [n for n in graph.neighbors(new_node)]
-    
-    # Add edges to growing graph
-    for neighbor in neighbors_of_new:
-        if neighbor < new_node:  # Only add if neighbor was added before
-            growing_graph.add_edge(new_node, neighbor)
-    
-    # Record degrees for all nodes that exist at this step
-    for node in range(new_node + 1):
-        if node not in degree_evolution:
-            degree_evolution[node] = []
-        degree_evolution[node].append(growing_graph.degree(node))
-
-# Write network data to CSV with degree evolution
 csv_path = 'network_data.csv'
 with open(csv_path, 'w', newline='') as f:
     writer = csv.writer(f)
     
-    # Header: node_id, x, y, then degree_0, degree_1, ..., degree_n_nodes-1, then targets
+    # Header: node_id, x, y, then degree_0, degree_1, ..., degree_59, then target coordinates
     header = ['node_id', 'x', 'y']
     for i in range(n_nodes):
         header.append(f'degree_at_node_{i}')
     
-    # Add placeholder headers for targets
-    max_neighbors = max(graph.degree(node) for node in graph.nodes())
+    # Add placeholder headers for targets (max neighbors)
+    max_neighbors = m_edges  # Each new node adds m_edges connections
     for i in range(max_neighbors):
         header.append(f'target_{i}_x')
         header.append(f'target_{i}_y')
     writer.writerow(header)
     
-    # Write each node's data
-    for node in graph.nodes():
-        x, y = pos_normalized[node]
-        neighbors = list(graph.neighbors(node))
+    # Start with node 0
+    growing_graph = nx.Graph()
+    growing_graph.add_node(0)
+    
+    # Write node 0: no connections
+    x, y = pos_normalized[0]
+    row = [0, x, y]
+    # All degrees are 0 initially
+    row.extend([0] * n_nodes)
+    # No connections for node 0
+    writer.writerow(row)
+    
+    # Add nodes 1 through 59 and write each one
+    for new_node in range(1, n_nodes):
+        growing_graph.add_node(new_node)
         
-        # Filter neighbors: only include if neighbor_id > node_id
-        neighbors_filtered = [n for n in neighbors if n > node]
+        # Find which nodes this new node connects to from the final graph
+        neighbors_of_new = [n for n in graph.neighbors(new_node)]
         
-        row = [node, x, y]
+        # Add edges from new_node to earlier nodes only
+        neighbors_filtered = []
+        for neighbor in neighbors_of_new:
+            if neighbor < new_node:
+                growing_graph.add_edge(new_node, neighbor)
+                neighbors_filtered.append(neighbor)
         
-        # Add degree evolution
-        if node in degree_evolution:
-            row.extend(degree_evolution[node])
+        # Write this node's row
+        x, y = pos_normalized[new_node]
+        row = [new_node, x, y]
         
-        # Add neighbor coordinates as pairs
+        # Add current degrees for all nodes
+        for node in range(n_nodes):
+            if node <= new_node:
+                row.append(growing_graph.degree(node))
+            else:
+                row.append(0)  # Nodes that don't exist yet have degree 0
+        
+        # Add target coordinates (neighbors with smaller IDs)
         for neighbor in neighbors_filtered:
             neighbor_x, neighbor_y = pos_normalized[neighbor]
             row.append(neighbor_x)
