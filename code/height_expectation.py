@@ -39,79 +39,81 @@ def create_distribution_curve(heights):
         smooth_counts = np.zeros(300)
         x_range = np.linspace(110, 230, 300)
     
-    # Convert to world coordinates (map counts to y-axis 1-8 range, representing 0-20 people)
+    # Convert to world coordinates (map counts to y-axis 2-9 range, representing 0-20 people)
     curve_points = []
     for h, count in zip(x_range, smooth_counts):
         x_pos = height_to_x(h)
-        y_pos = 1 + (count / 20) * (8 - 1)  # Scale count (0-20) to y-position (1-8)
+        y_pos = 2 + (count / 20) * (8 - 1)  # Scale count (0-20) to y-position (2-9)
         curve_points.append([x_pos, y_pos, 0])
     
     # Create curve
-    curve = VMobject(stroke_color=WHITE, stroke_width=3)
+    curve = VMobject(stroke_color="#E79E16", stroke_width=6)
     curve.set_points_as_corners(np.array(curve_points))
     
     return curve
 
 class HeightExpectation(MovingCameraScene):
-    def drop_dots(self, start_idx, end_idx, total_duration):
+    def drop_dot(self, idx, duration, hold_duration=0):
         """
-        Drop dots from start_idx to end_idx (inclusive) with evenly split duration.
-        Updates distribution curve after each dot drops.
+        Drop a single dot with specified duration.
+        Updates distribution curve after the dot drops.
         
         Args:
-            start_idx: Starting index in heights array
-            end_idx: Ending index in heights array (inclusive)
-            total_duration: Total time for all dots to drop
+            idx: Index in heights array
+            duration: Time for this dot to drop
+            hold_duration: Time to hold dot at top before dropping (default 0)
         """
-        num_dots = end_idx - start_idx + 1
-        time_per_dot = total_duration / num_dots
-        fade_duration = time_per_dot * 0.2  # 20% of dot time
-        dot_duration = time_per_dot - fade_duration
+        fade_duration = duration * 0.2  # 20% of dot time
+        dot_duration = duration - fade_duration
         
-        for idx in range(start_idx, end_idx + 1):
-            height = self.heights[idx]
-            x_pos = height_to_x(height)
+        height = self.heights[idx]
+        x_pos = height_to_x(height)
+        
+        # Create dot
+        dot = Circle(radius=0.15, color=WHITE, fill_opacity=1)
+        dot.move_to([x_pos, 10, 0])
+        
+        # Create metric label
+        metric_label = Text(f"{int(height)}cm", font_size=36, color=WHITE, font="sans-serif")
+        metric_label.move_to([x_pos + 1, 10.7, 0])
+        
+        # Create imperial label
+        imperial = cm_to_imperial(height)
+        imperial_label = Text(imperial, font_size=34, color=WHITE, font="sans-serif")
+        imperial_label.move_to([x_pos + 1, 9.9, 0])
+        
+        # Add and animate dot dropping
+        self.add(dot, metric_label, imperial_label)
+        
+        # Hold dot at top if hold_duration > 0
+        if hold_duration > 0:
+            self.wait(hold_duration)
+        
+        self.play(
+            dot.animate.move_to([x_pos, 2, 0]),
+            metric_label.animate.move_to([x_pos + 1, 2.5, 0]).set_opacity(0),
+            imperial_label.animate.move_to([x_pos + 1, 2.1, 0]).set_opacity(0),
+            run_time=dot_duration
+        )
+        
+        # Update distribution curve (only if we have at least 2 points)
+        heights_so_far = self.heights[:idx + 1]
+        if len(heights_so_far) >= 2:
+            new_curve = create_distribution_curve(heights_so_far)
             
-            # Create dot
-            dot = Circle(radius=0.15, color=WHITE, fill_opacity=1)
-            dot.move_to([x_pos, 10, 0])
+            # Fade old curve to new curve
+            if hasattr(self, 'current_curve') and self.current_curve is not None:
+                self.play(
+                    FadeOut(self.current_curve),
+                    FadeIn(new_curve),
+                    run_time=fade_duration
+                )
+                self.remove(self.current_curve)
+            else:
+                self.play(FadeIn(new_curve), run_time=fade_duration)
             
-            # Create metric label
-            metric_label = Text(f"{int(height)}", font_size=36, color=WHITE, font="sans-serif")
-            metric_label.move_to([x_pos + 1, 10.5, 0])
-            
-            # Create imperial label
-            imperial = cm_to_imperial(height)
-            imperial_label = Text(imperial, font_size=34, color=WHITE, font="sans-serif")
-            imperial_label.move_to([x_pos + 1, 10.1, 0])
-            
-            # Add and animate dot dropping
-            self.add(dot, metric_label, imperial_label)
-            self.play(
-                dot.animate.move_to([x_pos, 1, 0]),
-                metric_label.animate.move_to([x_pos + 1, 1.5, 0]).set_opacity(0),
-                imperial_label.animate.move_to([x_pos + 1, 1.1, 0]).set_opacity(0),
-                run_time=dot_duration
-            )
-            
-            # Update distribution curve (only if we have at least 2 points)
-            heights_so_far = self.heights[:idx + 1]
-            if len(heights_so_far) >= 2:
-                new_curve = create_distribution_curve(heights_so_far)
-                
-                # Fade old curve to new curve
-                if hasattr(self, 'current_curve') and self.current_curve is not None:
-                    self.play(
-                        FadeOut(self.current_curve),
-                        FadeIn(new_curve),
-                        run_time=fade_duration
-                    )
-                    self.remove(self.current_curve)
-                else:
-                    self.play(FadeIn(new_curve), run_time=fade_duration)
-                
-                self.add(new_curve)
-                self.current_curve = new_curve
+            self.add(new_curve)
+            self.current_curve = new_curve
     
     def construct(self):
         # --- CAMERA SETTINGS ---
@@ -119,32 +121,14 @@ class HeightExpectation(MovingCameraScene):
         self.camera.frame.move_to([6, 6, 0])
         self.camera.background_color = "#1a1a1a"
         
-        # Create horizontal white lines at various y values with width 2
-        y_values = [0, 2, 4, 6, 8, 10, 12]
-        lines = []
-        
-        for y in y_values:
-            line = Line(start=np.array([0, y, 0]), end=np.array([12, y, 0]), stroke_color=WHITE, stroke_width=2)
-            lines.append(line)
-        
-        # Create vertical white lines at various x values with width 2
-        x_values = [0, 2, 4, 6, 8, 10, 12]
-        
-        for x in x_values:
-            line = Line(start=np.array([x, 0, 0]), end=np.array([x, 12, 0]), stroke_color=WHITE, stroke_width=2)
-            lines.append(line)
-        
-        # Display all lines instantly
-        self.add(*lines)
-        
         # --- COORDINATE SYSTEM (on top) ---
-        origin = np.array([1, 1, 0])
+        origin = np.array([1, 2, 0])
         
         # X-axis
-        x_axis = Line(start=origin, end=np.array([12, 1, 0]), stroke_color=WHITE, stroke_width=2)
+        x_axis = Line(start=origin, end=np.array([12, 2, 0]), stroke_color=WHITE, stroke_width=2)
         
         # Y-axis
-        y_axis = Line(start=origin, end=np.array([1, 8, 0]), stroke_color=WHITE, stroke_width=2)
+        y_axis = Line(start=origin, end=np.array([1, 9, 0]), stroke_color=WHITE, stroke_width=2)
         
         # X-axis ticks and labels (110-230cm)
         x_cm_values = [110, 130, 150, 170, 190, 210, 230]
@@ -154,16 +138,16 @@ class HeightExpectation(MovingCameraScene):
         x_labels = []
         
         for pos, cm_val in zip(x_positions, x_cm_values):
-            tick = Line(start=np.array([pos, 1, 0]), end=np.array([pos, 0.85, 0]), stroke_color=WHITE, stroke_width=1.5)
+            tick = Line(start=np.array([pos, 2, 0]), end=np.array([pos, 1.85, 0]), stroke_color=WHITE, stroke_width=1.5)
             x_ticks.append(tick)
             
-            metric_label = Text(f"{cm_val}", font_size=36, color=WHITE, font="sans-serif")
-            metric_label.move_to([pos, 0.3, 0])
+            metric_label = Text(f"{cm_val}cm", font_size=36, color=WHITE, font="sans-serif")
+            metric_label.move_to([pos, 1.3, 0])
             x_labels.append(metric_label)
             
             imperial = cm_to_imperial(cm_val)
             imperial_label = Text(imperial, font_size=34, color=WHITE, font="sans-serif")
-            imperial_label.move_to([pos, -0.15, 0])
+            imperial_label.move_to([pos, 0.85, 0])
             x_labels.append(imperial_label)
         
         x_title = Text("height", font_size=40, color=WHITE, font="sans-serif")
@@ -171,7 +155,7 @@ class HeightExpectation(MovingCameraScene):
         
         # Y-axis ticks and labels (0-20)
         y_values = list(range(0, 21, 2))
-        y_positions = np.linspace(1, 8, len(y_values))
+        y_positions = np.linspace(2, 9, len(y_values))
         
         y_ticks = []
         y_labels = []
@@ -186,35 +170,34 @@ class HeightExpectation(MovingCameraScene):
         
         y_title = Text("number of people", font_size=40, color=WHITE, font="sans-serif")
         y_title.rotate(PI / 2)
-        y_title.move_to([-0.5, 4.5, 0])
+        y_title.move_to([-0.5, 5.5, 0])
         
         # Add coordinate system on top
         self.add(x_axis, y_axis)
         self.add(*x_ticks, *x_labels, x_title)
         self.add(*y_ticks, *y_labels, y_title)
         
-        self.wait(2)
+        self.wait(1)
         
         # --- LOAD HEIGHT DATA ---
         df = pd.read_csv('height_synthetic.csv')
         self.heights = df['Height'].values
         self.current_curve = None
         
-        # --- DROP DOTS IN GROUPS ---
-        # First 3 dots at 2s each
-        self.drop_dots(0, 2, 6)
+        # --- DROP DOTS WITH EXPLICIT TIMING ---
+        # First 3 dots at 2s each with 0.5s hold
+        for idx in range(0, 3):
+            self.drop_dot(idx, 2, hold_duration=0.5)
         
-        # Next 8 dots (3-10) with gradually decreasing duration from 2s to 0.25s
-        durations = np.linspace(2, 0.25, 8)
-        current_idx = 3
-        for duration in durations:
-            self.drop_dots(current_idx, current_idx, duration)
-            current_idx += 1
+        # Accelerating group (3-7) with gradually decreasing duration from 2s to 0.2s, no hold
+        durations = np.linspace(1, 0.075, 4)
+        for i, duration in enumerate(durations):
+            self.drop_dot(3 + i, duration, hold_duration=0)
         
-        # Fast dots from 11 to last in dataset at 0.25s each
-        last_idx = len(self.heights) - 1
-        num_fast_dots = last_idx - 10
-        self.drop_dots(11, last_idx, num_fast_dots * 0.25)
+        # Fast dots from 7 to 73 (stops before 146cm outlier at index 74)
+        for idx in range(7, 74):
+            self.drop_dot(idx, 0.075, hold_duration=0)
         
-        self.wait(2)
+        self.wait(1)
+
 

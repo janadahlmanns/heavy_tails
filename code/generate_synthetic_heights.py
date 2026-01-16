@@ -3,7 +3,7 @@ import numpy as np
 
 # Generate 100 measurements with mean 172, sd 10
 np.random.seed(42)
-heights = np.random.normal(loc=172, scale=10, size=100)
+heights = np.random.normal(loc=172, scale=10, size=75)
 heights = np.round(heights).astype(int)
 
 # Create dataframe
