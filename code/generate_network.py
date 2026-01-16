@@ -7,7 +7,7 @@ import csv
 
 # Parameters
 n_nodes = 60  # Total number of nodes
-m_edges = 4   # Number of edges each new node attaches to (controls heavy-tailedness)
+m_edges = 2  # Number of edges each new node attaches to (controls heavy-tailedness)
 
 # Generate Barabási-Albert network
 # This creates preferential attachment: nodes with higher degree attract more connections
@@ -15,7 +15,7 @@ graph = nx.barabasi_albert_graph(n_nodes, m_edges)
 
 # Compute spring layout (Fruchterman-Reingold algorithm)
 # This naturally spreads out nodes and looks nice
-pos = nx.spring_layout(graph, k=1.0, iterations=50, seed=42)
+pos = nx.spring_layout(graph, k=1.0, iterations=50, seed=1)
 
 # Normalize positions to Manim coordinate space
 # Manim typically uses [-8, 8] for x and [-4.5, 4.5] for y in standard view
