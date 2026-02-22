@@ -21,4 +21,5 @@ ffmpeg -i "media/videos/trial_averaging/600p15/TrialAveraging.mp4" -vf "fps=15,s
  dark gray #3A3A3A
  light gray #757575
  lightest gray #C3C3C3
+ beige #FDFAEA
  white #FFFFFF
